@@ -1,0 +1,23 @@
+prog.x: main.o log.o math.o
+	"/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld" -demangle -lto_library /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/libLTO.dylib -no_deduplicate -dynamic -arch x86_64 -macosx_version_min 10.12.0 -syslibroot /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -o prog.x main.o log.o math.o -lSystem /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/../lib/clang/8.1.0/lib/darwin/libclang_rt.osx.a
+
+main.o: main.s
+	as main.s -o main.o
+
+main.s: main.c
+	gcc -S main.c -o main.s
+
+log.o: log.s
+	as log.s -o log.o
+
+log.s: log.c
+	gcc -S log.c -o log.s
+
+math.o: math.s
+	as math.s -o math.o
+
+math.s: math.c
+	gcc -S math.c -o math.s
+
+clean:
+	rm -f math.o log.o main.o main.s log.s math.s prog.x
