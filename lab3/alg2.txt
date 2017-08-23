@@ -1,0 +1,36 @@
+########## Posicoes importantes ##########
+tamanho dos vetores --> 3FF
+endereco do vetor 1 --> 3FD
+endereco do vetor 2 --> 3FE
+
+########## Variaveis extras ##########
+variavel de soma/subtracao --> valor: 1, endereco:
+variavel de somatorio --> valor: 0, endereco:
+
+########## O que fazer ##########
+--> devemos multiplicar os valores respectivos em cada vetor e somar a variavel somatorio
+
+--> Multiplicando os vetores:
+1. Carregar a posicao de memoria do primeiro vetor (3FD) no AC
+2. Carregar o valor da posicao de memoria com o STOR especial (STOR(X,a,b)) --> armazena na posicao em que vai ser a operacao (esse pode ir no MQ)
+3. Carregar a posicao de memoria do segundo vetor (3FE) no AC
+4. Carregar o registrador MQ
+5. Carregar o valor da posicao de memoria com o STOR especial (STOR(X,a,b)) --> armazena na posicao em que vai ser a operacao (esse vai ficar no AC)
+6. Multiplicar os dois vetores
+7. Salvar a multiplicacao no registrador AC
+8. Somar a multiplicacao (que ta no AC) com o valor do somatorio
+9. Salvar a soma na posicao de memoria do somatorio
+
+--> Atualizacoes pro programa rodar:
+1. Atualizar os valores da posicao dos vetores
+  1. Carregar o valor com o endereco de memoria dos vetores no AC (3FD e 3FE)
+  2. Somar 1 a esse valor
+  3. Salvar esse valor novamente na sua respectiva posicao (3FD ou 3FE)
+2. Atualizar o contador do laco:
+  1. Carregar o valor de 3FF no AC
+  2. Subtrair 1 do AC
+  3. Salvar o novo valor em 3FF
+  4. Saltar para a posicao onde se inicia o laco (xxx)
+3. Terminar o programa
+  1. Carrega o somatorio no AC
+  2. Jump pra 400

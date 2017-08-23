@@ -1,0 +1,25 @@
+#######################################
+# Aluno: Luiz Eduardo T. C. Cartolano #
+# RA: 183012                          #
+# Turma: MC404 - B                    #
+#######################################
+
+# instrucoes de operacoes
+000 01 3FD 12 002 # carrega a posicao do vetor 1 e salva no endereco onde sera usada
+001 01 3FE 13 002 # carrega a posicao do vetor 2 e salva no endereco onde sera usada
+002 09 000 0B 000 # carrega a posicao do vetor 1 em MQ e multiplica pelo vetor 2 em AC
+003 0A 000 05 064 # carrega o resultado da mult em AC e soma com o valor contido no somatorio
+004 21 064 01 3FD # salva o novo valor do somatorio e carrega a posicao do vetor 1
+005 05 065 21 3FD # atualiza a posicao do vetor 1 e salva na memoria
+006 01 3FE 05 065 # carrega a posicao do vetor 2 e a atualiza
+007 21 3FE 01 3FF # salva a nova posicao do vetor 2 e carrega o contador em AC
+008 06 065 21 3FF # atualiza o contador e salva seu novo valor na memoria
+009 0F 000 01 064 # salto condicional para inicio do laco e carrega o somatorio no AC
+00A 0D 400 0D 400 # salta para o fim do programa
+
+# mapa de memoria
+064 00 00 00 00 00 # variavel somatorio
+065 00 00 00 00 01 # constante de valor 1
+3FD 00 00 00 00 00 # posicao do vetor 1
+3FE 00 00 00 00 00 # posicao do vetor 2
+3FF 00 00 00 00 00 # contador
