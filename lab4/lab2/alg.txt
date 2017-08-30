@@ -1,0 +1,47 @@
+### Algoritmo ###
+
+# carregar a velocidae em 105
+# carregar a gravidade(10) em 301
+# carregar  k(0) em 302
+# carregar um contador(09) em 303
+# carregar uma subtracao(01) em 304
+# carregar uma "variavel - v*g"(0) em 305
+
+
+#000
+#LOAD MQ,M(301) -> carrego a gravidade no registrador MQ
+#MUL(105) -> v*g
+
+#001
+#LOAD MQ
+#STOR M(305) -> carrego o valor de v*g(y) na posicao de memoria 305
+
+#002
+#RSH  -> divido o valor de AC por 2
+#STOR(302) -> salvo o valor de y/2 na posicao de memoria 002 (pos de K)
+
+#003
+#LOAD M(305) -> carrego y (da pos 005) para o registrador AC
+#DIV M(302) -> divido y (em AC) por K (pos 002)
+
+#004
+#LOAD MQ -> transfiro o valor de y/k para AC
+#ADD M(302) -> somo K(002) com AC
+
+#005
+#RSH -> divide o valor de k por 2
+#STOR M(302) -> salva o valor de K
+
+#006
+#LOAD(303) -> carrego o contador
+#SUB(304) -> subtraio o contador
+
+#007
+#STOR(303) -> salvo o contador na memoria
+#JUMP+M(003,a,b) -> pulo para o inicio do programa ()
+
+#008
+#LOAD(302) -> carrego o valor de K no registrador AC
+#JUMP M() -> pulo pra ultima posicao do programa
+
+### Fim do algoritmo ###
