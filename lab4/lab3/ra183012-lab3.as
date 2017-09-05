@@ -24,12 +24,16 @@
   LOAD M(var_somatorio)
   JUMP M(0x400)
 
-.org 0x064
-  var_somatorio:
-    .word 0000000000
-  constate_um:
-    .word 0000000001
+.align 1
+#somatorio
+var_somatorio:
+  .word 0000000000
 
+#constante de subtracao
+constate_um:
+  .word 0000000001
+
+#enderecos reservados para os vetores
 .org 0x3FD
   var_vetor_um:
     .word 0000000000
