@@ -9,7 +9,7 @@
 
 105 00 000 00 DAC #distancia
 301 00 000 00 00A #gravidade
-302 00 000 00 000 #k
+302 00 000 00 000 #kk
 303 00 000 00 009 #contador
 304 00 000 00 001 #subtrai
 305 00 000 00 000 #variavel

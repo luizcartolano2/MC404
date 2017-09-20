@@ -239,6 +239,13 @@ int achaErroGramatical() {
         if (achaErroLexico(proximoToken) == 0) {
           return 0;
         }
+        if (proximoToken.tipo == Decimal) {
+          int numero = verificaDecimal(proximoToken.palavra);
+          if (numero < 0 || numero > 1023) {
+            fprintf(stderr, "ERRO GRAMATICAL: palavra na linha %d!\n",tokenRecuperado.linha);
+            return 0;
+          }
+        }
         if (((proximoToken.tipo != Hexadecimal) && (proximoToken.tipo != Decimal))) {
           fprintf(stderr, "ERRO GRAMATICAL: palavra na linha %d!\n",tokenRecuperado.linha);
           return 0;
@@ -256,6 +263,13 @@ int achaErroGramatical() {
         if (achaErroLexico(proximoToken) == 0) {
           return 0;
         }
+        if (proximoToken.tipo == Decimal) {
+          int numero = verificaDecimal(proximoToken.palavra);
+          if (numero < 0 || numero > 1023) {
+            fprintf(stderr, "ERRO GRAMATICAL: palavra na linha %d!\n",tokenRecuperado.linha);
+            return 0;
+          }
+        }
         if (!(proximoToken.tipo == Decimal)) {
           fprintf(stderr, "ERRO GRAMATICAL: palavra na linha %d!\n",tokenRecuperado.linha);
           return 0;
@@ -272,6 +286,13 @@ int achaErroGramatical() {
         Token proximoToken = recuperaToken(i+1);
         if (achaErroLexico(proximoToken) == 0) {
           return 0;
+        }
+        if (proximoToken.tipo == Decimal) {
+          int numero = verificaDecimal(proximoToken.palavra);
+          if (numero < 0 || numero > 1023) {
+            fprintf(stderr, "ERRO GRAMATICAL: palavra na linha %d!\n",tokenRecuperado.linha);
+            return 0;
+          }
         }
         /* a primeira palavra que segue um .wfill DEVE ser um Decimal */
         if (!(proximoToken.tipo == Decimal)) {
