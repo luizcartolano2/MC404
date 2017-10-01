@@ -44,6 +44,60 @@ _start:
     mov r1, #8         @ 7 caracteres + '\n'
     bl  write
 
+    @Realiza a decodificacao
+  	@ Chama a funcao "read" para ler 7 caracteres da entrada padrao
+  	ldr r0, =input_buffer
+  	mov r1, #8             @ 7 caracteres + '\n'
+  	bl  read
+  	mov r4, r0             @ copia o retorno para r4.
+
+  	@ Chama a funcao "atoi" para converter a string para um numero
+  	ldr r0, =input_buffer
+  	mov r1, r4
+  	bl  atoi
+
+  	@ Chama a funcao "decode" para codificar o valor de r0 usando
+  	@ o codigo de hamming.
+  	bl  decode
+  	mov r4, r0             @ copia o retorno da decodificacao para r4.
+  	mov r5, r1             @ copia o retorno da verificacao para r5.
+
+  	@ Chama a funcao "itoa" para converter o valor decodificado
+  	@ para uma sequencia de caracteres '0's e '1's
+  	ldr r0, =output_buffer
+  	mov r1, #4
+  	mov r2, r4
+  	bl  itoa
+
+  	@ Adiciona o caractere '\n' ao final da sequencia (byte 4)
+  	ldr r0, =output_buffer
+  	mov r1, #'\n'
+  	strb r1, [r0, #4]
+
+  	@ Chama a funcao write para escrever os 4 caracteres e
+  	@ o '\n' na saida padrao.
+  	ldr r0, =output_buffer
+  	mov r1, #5         @ 4 caracteres + '\n'
+  	bl  write
+
+  	@ Chama a funcao "itoa" para converter o valor decodificado
+  	@ para uma sequencia de caracteres '0's e '1's
+  	ldr r0, =output_buffer
+  	mov r1, #1
+  	mov r2, r5
+  	bl  itoa
+
+  	@ Adiciona o caractere '\n' ao final da sequencia (byte 4)
+  	ldr r0, =output_buffer
+  	mov r1, #'\n'
+  	strb r1, [r0, #1]
+
+  	@ Chama a funcao write para escrever os 1 caractere e
+  	@ o '\n' na saida padrao.
+  	ldr r0, =output_buffer
+  	mov r1, #2         @ 1 caracteres + '\n'
+  	bl  write
+
     @ Chama a funcao exit para finalizar processo.
     mov r0, #0
     bl  exit
@@ -57,40 +111,40 @@ encode:
       push {r4-r11, lr}
 
       @ aqui separamos os bits em cada registrador
-      @r1 recebe o d4
-      and r1, r0, #1
-      @r2 recebe o d3
-      and r2, r0, #2
+      @r8 recebe o d4
+      and r8, r0, #1
+      @r9 recebe o d3
+      and r9, r0, #2
       @ desloca d3 uma posicoes para direita
-      lsr r2, #1
-      @r3 recebe o d2
-      and r3, r0, #4
+      lsr r9, #1
+      @r10 recebe o d2
+      and r10, r0, #4
       @ desloca d2 duas posicoes para direita
-      lsr r3, #2
+      lsr r10, #2
       @r4 recebe o d1
       and r4, r0, #8
       @ desloca d1 tres posicoes para direita
       lsr r4, #3
 
       @ agora encontramos os valores para p1, p2 e p3
-      @ r5(p1), recebe o resultado de XOR entre r4(d1) e r3(d2)
-      xor r5, r4, r3
-      @ r5(p1), recebe o resultado de XOR entre r5(p1) e r1(d4)
-      xor r5, r5, r1
-      @ r6(p2), recebe o resultado de XOR entre r4(d1) e r2(d3)
-      xor r6, r4, r2
-      @ r6(p2), recebe o resultado de XOR entre r6(p2) e r1(d4)
-      xor r6, r6, r4
-      @ r7(p3), recebe o resultado de XOR entre r3(d2) e r2(d3)
-      xor r7, r3, r2
-      @ r7(p3), recebe o resultado de XOR entre r7(p3) e r1(d4)
-      xor r7, r7, r1
+      @ r5(p1), recebe o resultado de XOR entre r4(d1) e r10(d2)
+      eor r5, r4, r10
+      @ r5(p1), recebe o resultado de XOR entre r5(p1) e r8(d4)
+      eor r5, r5, r8
+      @ r6(p2), recebe o resultado de XOR entre r4(d1) e r9(d3)
+      eor r6, r4, r9
+      @ r6(p2), recebe o resultado de XOR entre r6(p2) e r8(d4)
+      eor r6, r6, r4
+      @ r7(p3), recebe o resultado de XOR entre r10(d2) e r9(d3)
+      eor r7, r10, r9
+      @ r7(p3), recebe o resultado de XOR entre r7(p3) e r8(d4)
+      eor r7, r7, r8
 
       @ agora iremos deslocar os bits para que eles ocupem as posicoes que queremos
-      @ d3(r2) deve ser deslocado em uma posicao
-      lsl r2, #1
-      @ d2(r3) deve ser deslocado em duas posicoes
-      lsl r3, #2
+      @ d3(r9) deve ser deslocado em uma posicao
+      lsl r9, #1
+      @ d2(r10) deve ser deslocado em duas posicoes
+      lsl r10, #2
       @ p3(r7) deve ser deslocado em tres posicoes
       lsl r7, #3
       @ d1(r4) deve ser deslocado em quatro posicoes
@@ -104,8 +158,8 @@ encode:
       and r0, r0, #0
 
       @agora, para colocar os bits em r0, iremos fazer um OU entre r0 e todos os registradores
-      orr r0, r1, r2
-      orr r0, r0, r3
+      orr r0, r8, r9
+      orr r0, r0, r10
       orr r0, r0, r7
       orr r0, r0, r4
       orr r0, r0, r6
@@ -124,18 +178,18 @@ decode:
       push {r4-r11, lr}
 
       @ primeiro iremos separar p1,p2,p3,d1,d2,d3 e d4 em registradores
-      @ r1 recebera p1
-      and r1, r0, #64
-      @ deslocamos p1(r1) 6 posicoes para a direita
-      lsr r1, #6
-      @ r2 recebera p2
-      and r2, r0, #32
-      @ deslocamos p2(r2) 5 posicoes para a direita
-      lsr r2, #5
-      @ r3 recebera d1
-      and r3, r0, #16
-      @ deslocamos d1(r3) 4 posicoes para a direita
-      lsr r3, #4
+      @ r9 recebera p1
+      and r9, r0, #64
+      @ deslocamos p1(r9) 6 posicoes para a direita
+      lsr r9, #6
+      @ r10 recebera p2
+      and r10, r0, #32
+      @ deslocamos p2(r10) 5 posicoes para a direita
+      lsr r10, #5
+      @ r11 recebera d1
+      and r11, r0, #16
+      @ deslocamos d1(r11) 4 posicoes para a direita
+      lsr r11, #4
       @ r4 recebera p3
       and r4, r0, #8
       @ deslocamos p3(r4) 3 posicoes para a direita
@@ -153,20 +207,19 @@ decode:
 
       @ agora verificamos se a paridade dos bits esta correta
       @ primeiro verificamos a corretude da paridade de p1, fazendo: p1 XOR d1 XOR d2 XOR d4
-      eor r1, r1, r3
-      eor r1, r1, r5
-      eor r1, r1, r7
+      eor r9, r9, r11
+      eor r9, r9, r5
+      eor r9, r9, r7
       @ depois verificamos a corretude da paridade de p2, fazendo: p2 XOR d1 XOR d3 XOR d4
-      eor r2, r2, r3
-      eor r2, r2, r6
-      eor r2, r2, r7
+      eor r10, r10, r11
+      eor r10, r10, r6
+      eor r10, r10, r7
       @ por fim verificamos a corretude da paridade de p3, fazendo: p3 XOR d2 XOR d3 XOR d4
       eor r4, r4, r5
       eor r4, r4, r6
       eor r4, r4, r7
       @ em r8 teremos o resultado final entre todas as paridades
-      and r8, #0
-      orr r8, r1, r2
+      orr r8, r9, r10
       orr r8, r8, r4
       @ agora passamos o resultado em r8 para r1 (pois eh o pedido no enunciado)
       and r1, #0
@@ -174,13 +227,13 @@ decode:
 
       @ uma vez que ja temos o resultado da verificacao da paridade em r1, iremos decodificar o numero e colocalo em r0
       @ primeiro temos que deslocar os bits para a posicao que eles devem ocupar
-      lsl r3, #3
+      lsl r11, #3
       lsl r5, #2
       lsl r6, #1
       @ uma vez que os bits ja estao na posicao correta, iremos setar 0 para todos os bits em r0
       and r0, r0, #0
       @ zerados os bits de r0, faremos um OR entre r0 e os registradores com os bits decodificados
-      orr r0, r0, r3
+      orr r0, r0, r11
       orr r0, r0, r5
       orr r0, r0, r6
       orr r0, r0, r7
