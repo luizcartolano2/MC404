@@ -8,7 +8,7 @@
 typedef struct RotuloDef {
   char* palavra;
   int posicao;
-  char lado;
+  int lado; //0 - Esquerda, 1 - Direita
 } RotuloDef;
 RotuloDef rotulosDefinidos[4096];
 int numRotulosDefinidos;
@@ -21,14 +21,23 @@ typedef struct SimboloDef {
 SimboloDef simbolosDefinidos[4096];
 int numSimbolosDefinidos;
 
+// estrutura de memoria do IAS
+typedef struct Memoria {
+  int posicao;
+  int lado; //0 - Esquerda, 1 - Direita
+}Memoria;
+Memoria memoria;
+int posicoesMemoriaUsadas[1025];
+int numPosicoesMemoriaUsadas;
+int achaPosicaoMemoria(int posicao);
 
 long int converteHexToDec (char* palavra);
 char* forneceMnemonico (char* palavra);
 
 // funcoes que manipulam as tabelas de rotulo e simbolos declarados
-RotuloDef criaNovoRotulo(char* nome, int posicao, char lado);
+RotuloDef criaNovoRotulo(char* nome, int posicao, int lado);
 SimboloDef criaNovoSimbolo(char* palavra, int valor);
-void criaTabelaDefinicoes();
+int criaTabelaDefinicoes();
 char* copiaNomeToken(char* palavra);
 void imprimeListaRotulos();
 void imprimeListaSimbolos();
@@ -42,29 +51,35 @@ int achaRotulo(char* palavra);
 *  0 caso não haja erro.
 */
 int emitirMapaDeMemoria() {
+  // iniciamos a montagem no lado esquerdo da posicao 0
+  memoria.posicao = 0;
+  memoria.lado = 0;
+  numPosicoesMemoriaUsadas = 0;
 
   // seta como 0 o valor inicial para o numero de rotulos e simbolos definidos
   numRotulosDefinidos = 0;
   numSimbolosDefinidos = 0;
 
-  criaTabelaDefinicoes();
-
+  // criamos as tabelas de rotulos e simbolos ja definidos (e imprimimos apenas para verificacao)
+  if (criaTabelaDefinicoes() == 0) {
+    return 1;
+  }
+  imprimeListaSimbolos();
+  imprimeListaRotulos();
+  // antes de dar proseguimento a montagem verficamos se tem alguma palavra sendo usada sem estar definida
   if (achaErroDefinicao() == 0) {
     return 1;
   }
 
-  imprimeListaSimbolos();
-  imprimeListaRotulos();
+  // apos criada as tabelas, reiniciamos a montagem no lado esquerdo da posicao 0
+  memoria.posicao = 0;
+  memoria.lado = 0;
 
   return 0;
 
 }
 
 // funcao que cria as tabelas de simbolos e rotulos definidos
-/* Vai ser util:
-if (!((strcmp(tokenRecuperado.palavra,"LOADmq") == 0) || (strcmp(tokenRecuperado.palavra,"LSH") == 0) || (strcmp(tokenRecuperado.palavra,"RSH") == 0)))
-*/
-
 int achaErroDefinicao() {
   int numDeTokens = getNumberOfTokens();
   for (int i = 0; i < numDeTokens; i++) {
@@ -130,7 +145,7 @@ int achaSimbolo(char* palavra) {
   return 0;
 }
 
-void criaTabelaDefinicoes() {
+int criaTabelaDefinicoes() {
   int numDeTokens = getNumberOfTokens();
 
   for (int i = 0; i < numDeTokens; i++) {
@@ -140,12 +155,12 @@ void criaTabelaDefinicoes() {
     // se o token for a definicao de um rotulo, entao o adicionamos na tabela de rotulos que estamos criando
     if (tokenRecuperado.tipo == DefRotulo) {
       char* palavra = copiaNomeToken(tokenRecuperado.palavra);
-      RotuloDef novoRotulo = criaNovoRotulo(palavra, -1, -1);
+      RotuloDef novoRotulo = criaNovoRotulo(palavra, memoria.posicao, memoria.lado);
       rotulosDefinidos[numRotulosDefinidos] = novoRotulo;
       numRotulosDefinidos++;
-
+    }
+    else if (tokenRecuperado.tipo == Diretiva) {
       // se o token for um .set entao ele esta definindo um simbolo, logo devemos adicionar esse simbolo a nossa tabela
-    } else if (tokenRecuperado.tipo == Diretiva) {
       if (strcmp(tokenRecuperado.palavra,".set") == 0) {
         Token simboloDefinido = recuperaToken(i+1);
         Token valorDoSimbolo = recuperaToken(i+2);
@@ -161,35 +176,107 @@ void criaTabelaDefinicoes() {
           numSimbolosDefinidos++;
         }
       }
+      else if (strcmp(tokenRecuperado.palavra,".org") == 0) {
+        /* Pensar em como verificar se essa posicao ja foi usada */
+        Token tokenPosicaoDeMemoria = recuperaToken(i+1);
+        if (tokenPosicaoDeMemoria.tipo == Hexadecimal) {
+          int novaPosicao = (int)converteHexToDec(tokenPosicaoDeMemoria.palavra);
+          memoria.posicao = novaPosicao;
+          memoria.lado = 0;
+        } else {
+          int novaPosicao = atoi(tokenPosicaoDeMemoria.palavra);
+          memoria.posicao = novaPosicao;
+          memoria.lado = 0;
+        }
+        if (achaPosicaoMemoria(memoria.posicao) == 0) {
+          fprintf(stderr, "Impossível montar o código!\n");
+          return 0;
+        } else {
+          posicoesMemoriaUsadas[numPosicoesMemoriaUsadas] = memoria.posicao;
+          numPosicoesMemoriaUsadas++;
+        }
+      }
+      else if (strcmp(tokenRecuperado.palavra,".align") == 0) {
+        Token parametro = recuperaToken(i+1);
+        int multiplo = atoi(parametro.palavra);
+        if (memoria.lado == 1) {
+          memoria.lado = 0;
+          (memoria.posicao)++;
+          posicoesMemoriaUsadas[numPosicoesMemoriaUsadas] = memoria.posicao;
+          numPosicoesMemoriaUsadas++;
+        } while (memoria.posicao % multiplo != 0) {
+          (memoria.posicao)++;
+          posicoesMemoriaUsadas[numPosicoesMemoriaUsadas] = memoria.posicao;
+          numPosicoesMemoriaUsadas++;
+        }
+      }
+      else if (strcmp(tokenRecuperado.palavra,".wfill") == 0) {
+        Token parametro = recuperaToken(i+1);
+        int posicoesAOcupar = atoi(parametro.palavra);
+        // se a posicao de memoria ocupada ao fim do .wfill for maior que 1024, temos um erro
+        if (memoria.posicao + posicoesAOcupar > 1024) {
+          fprintf(stderr, "Impossível montar o código!\n");
+          return 0;
+        }
+        // se o .wfill foi chamado para o lado direito de uma palavra temos um erro
+        if (memoria.lado == 1) {
+          fprintf(stderr, "Impossível montar o código!\n");
+          return 0;
+        }
+        for (int i = memoria.posicao; i < memoria.posicao + posicoesAOcupar; i++) {
+          posicoesMemoriaUsadas[numPosicoesMemoriaUsadas] = i;
+          numPosicoesMemoriaUsadas++;
+        }
+        memoria.posicao = memoria.posicao + posicoesAOcupar;
+
+      }
+      else if (strcmp(tokenRecuperado.palavra,".word") == 0) {
+        // um .word nao pode ser chamado para o lado direito de uma palavra de memoria
+        if (memoria.lado == 1) {
+          fprintf(stderr, "Impossível montar o código!\n");
+          return 0;
+        }
+        if (memoria.posicao > 1024) {
+          fprintf(stderr, "Impossível montar o código!\n");
+          return 0;
+        }
+        memoria.posicao = memoria.posicao + 1;
+        posicoesMemoriaUsadas[numPosicoesMemoriaUsadas] = memoria.posicao;
+        numPosicoesMemoriaUsadas++;
+      }
+    }
+    else if (tokenRecuperado.tipo == Instrucao) {
+      if (memoria.posicao <= 1024) {
+        if (memoria.lado == 1) {
+          (memoria.posicao)++;
+          memoria.lado = 0;
+          posicoesMemoriaUsadas[numPosicoesMemoriaUsadas] = memoria.posicao;
+          numPosicoesMemoriaUsadas++;
+        } else {
+          memoria.lado = 1;
+        }
+      } else {
+        fprintf(stderr, "Impossível montar o código!\n");
+        return 0;
+      }
     }
   }
+
+  return 1;
+
 }
 
-void imprimeListaRotulos() {
-  printf("\n");
-  printf("Lista de Rotulos\n");
-  for (int i = 0; i < numRotulosDefinidos; i++) {
-    printf("RotuloDef %d\n", i);
-    printf("\tPalavra: %s\n", rotulosDefinidos[i].palavra);
-    printf("\tPosicao: %d\n", rotulosDefinidos[i].posicao);
-    printf("\tLado: %c\n", rotulosDefinidos[i].lado);
+int achaPosicaoMemoria(int posicao) {
+  for (int i = 0; i < numPosicoesMemoriaUsadas; i++) {
+    if (posicoesMemoriaUsadas[i] == posicao) {
+      return 0;
+    }
   }
-  printf("\n");
-}
-
-void imprimeListaSimbolos() {
-  printf("\n");
-  printf("Lista de Simbolos\n");
-  for (int i = 0; i < numSimbolosDefinidos; i++) {
-    printf("Simbolo %d\n", i);
-    printf("\tPalavra: %s\n", simbolosDefinidos[i].palavra);
-    printf("\tValor: %d\n", simbolosDefinidos[i].valor);
-  }
-  printf("\n");
+  return 1;
 }
 
 // funcao generica que cria um novo RotuloDefinido
-RotuloDef criaNovoRotulo(char* nome, int posicao, char lado) {
+RotuloDef criaNovoRotulo(char* nome, int posicao, int lado) {
   RotuloDef novoRotulo;
   novoRotulo.palavra = nome;
   novoRotulo.posicao = posicao;
@@ -299,4 +386,28 @@ char* forneceMnemonico (char* palavra) {
   } else {
     return "ERRROOO";
   }
+}
+
+/*Funcoes auxiliares para verificar as tabelas de rotulo e simbolos criadas*/
+void imprimeListaRotulos() {
+  printf("\n");
+  printf("Lista de Rotulos\n");
+  for (int i = 0; i < numRotulosDefinidos; i++) {
+    printf("RotuloDef %d\n", i);
+    printf("\tPalavra: %s\n", rotulosDefinidos[i].palavra);
+    printf("\tPosicao: %d\n", rotulosDefinidos[i].posicao);
+    printf("\tLado: %d\n", rotulosDefinidos[i].lado);
+  }
+  printf("\n");
+}
+
+void imprimeListaSimbolos() {
+  printf("\n");
+  printf("Lista de Simbolos\n");
+  for (int i = 0; i < numSimbolosDefinidos; i++) {
+    printf("Simbolo %d\n", i);
+    printf("\tPalavra: %s\n", simbolosDefinidos[i].palavra);
+    printf("\tValor: %d\n", simbolosDefinidos[i].valor);
+  }
+  printf("\n");
 }

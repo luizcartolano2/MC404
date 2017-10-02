@@ -1,1 +1,3 @@
-ADD var1
+.org 0
+.wfill 10 100
+var1:

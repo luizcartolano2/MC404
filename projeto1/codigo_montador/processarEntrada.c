@@ -146,14 +146,12 @@ int achaErroLexico(Token token) {
   } else if (token.tipo == Decimal) {
     verifica = verificaDecimal(token.palavra);
     if (verifica == 0) {
-      fprintf(stderr, "oi\n");
       fprintf(stderr, "ERRO LEXICO: palavra inválida na linha %d!\n",token.linha);
       return 0;
     }
   } else if (token.tipo == Nome) {
     verifica = verificaNome(token.palavra);
     if (verifica == 0) {
-      fprintf(stderr, "oi2\n");
       fprintf(stderr, "ERRO LEXICO: palavra inválida na linha %d!\n",token.linha);
       return 0;
     }
@@ -620,8 +618,12 @@ int verificaHexadecimal (char* palavra) {
  */
 int verificaDecimal (char* palavra) {
 
-  int inteiro = atoi(palavra);
-  return inteiro;
+  if (strcmp(palavra,"0") == 0) {
+    return 1;
+  } else {
+    int inteiro = atoi(palavra);
+    return inteiro;
+  }
 
 }
 
