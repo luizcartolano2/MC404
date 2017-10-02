@@ -1,3 +1,9 @@
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+@  Aluno: Luiz Eduardo Cartolano   @
+@  RA: 183012                      @
+@  Turma: B                        @
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+      
 .globl _start
 
 .data
@@ -116,17 +122,21 @@ encode:
       @r9 recebe o d3
       and r9, r0, #2
       @ desloca d3 uma posicoes para direita
-      lsr r9, #1
+      mov r9, r9, lsr #1
       @r10 recebe o d2
       and r10, r0, #4
       @ desloca d2 duas posicoes para direita
-      lsr r10, #2
+      mov r10, r10, lsr #2
       @r4 recebe o d1
       and r4, r0, #8
       @ desloca d1 tres posicoes para direita
-      lsr r4, #3
+      mov r4, r4,lsr #3
 
       @ agora encontramos os valores para p1, p2 e p3
+      and r5, r5, #0
+      and r6, r6, #0
+      and r7, r7, #0
+
       @ r5(p1), recebe o resultado de XOR entre r4(d1) e r10(d2)
       eor r5, r4, r10
       @ r5(p1), recebe o resultado de XOR entre r5(p1) e r8(d4)
@@ -134,7 +144,7 @@ encode:
       @ r6(p2), recebe o resultado de XOR entre r4(d1) e r9(d3)
       eor r6, r4, r9
       @ r6(p2), recebe o resultado de XOR entre r6(p2) e r8(d4)
-      eor r6, r6, r4
+      eor r6, r6, r8
       @ r7(p3), recebe o resultado de XOR entre r10(d2) e r9(d3)
       eor r7, r10, r9
       @ r7(p3), recebe o resultado de XOR entre r7(p3) e r8(d4)
@@ -142,17 +152,17 @@ encode:
 
       @ agora iremos deslocar os bits para que eles ocupem as posicoes que queremos
       @ d3(r9) deve ser deslocado em uma posicao
-      lsl r9, #1
+      mov r9, r9, lsl #1
       @ d2(r10) deve ser deslocado em duas posicoes
-      lsl r10, #2
+      mov r10, r10, lsl #2
       @ p3(r7) deve ser deslocado em tres posicoes
-      lsl r7, #3
+      mov r7, r7, lsl #3
       @ d1(r4) deve ser deslocado em quatro posicoes
-      lsl r4, #4
+      mov r4, r4, lsl #4
       @ p2(r6) deve ser deslocado em cinco posicoes
-      lsl r6, #5
+      mov r6, r6, lsl #5
       @ p1(r5) deve ser deslocado em seis posicoes
-      lsl r5, #6
+      mov r5, r5, lsl #6
 
       @ antes de recolocar os bits em r0 irei garantir que todos os bits em r0 estao zerados
       and r0, r0, #0
@@ -181,27 +191,27 @@ decode:
       @ r9 recebera p1
       and r9, r0, #64
       @ deslocamos p1(r9) 6 posicoes para a direita
-      lsr r9, #6
+      mov r9, r9,lsr #6
       @ r10 recebera p2
       and r10, r0, #32
       @ deslocamos p2(r10) 5 posicoes para a direita
-      lsr r10, #5
+      mov r10, r10, lsr #5
       @ r11 recebera d1
       and r11, r0, #16
       @ deslocamos d1(r11) 4 posicoes para a direita
-      lsr r11, #4
+      mov r11, r11, lsr #4
       @ r4 recebera p3
       and r4, r0, #8
       @ deslocamos p3(r4) 3 posicoes para a direita
-      lsr r4, #3
+      mov r4, r4, lsr #3
       @ r5 recebera d2
       and r5, r0, #4
       @ deslocamos d2(r5) 2 posicoes para a direita
-      lsr r4, #2
+      mov r5, r5, lsr #2
       @ r6 recebera d3
       and r6, r0, #2
       @ deslocamos d3(r6) 1 posicao para a direita
-      lsr r4, #1
+      mov r6, r6, lsr #1
       @ r7 recebera d4
       and r7, r0, #1
 
@@ -227,9 +237,9 @@ decode:
 
       @ uma vez que ja temos o resultado da verificacao da paridade em r1, iremos decodificar o numero e colocalo em r0
       @ primeiro temos que deslocar os bits para a posicao que eles devem ocupar
-      lsl r11, #3
-      lsl r5, #2
-      lsl r6, #1
+      mov r11, r11,lsl #3
+      mov r5, r5, lsl #2
+      mov r6, r6, lsl #1
       @ uma vez que os bits ja estao na posicao correta, iremos setar 0 para todos os bits em r0
       and r0, r0, #0
       @ zerados os bits de r0, faremos um OR entre r0 e os registradores com os bits decodificados
