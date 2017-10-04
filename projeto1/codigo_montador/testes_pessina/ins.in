@@ -1,0 +1,6 @@
+.set INICIO 10
+ADD "10"
+ADD "rot"
+ADD "0x0000000000"
+ADD "rot"
+rot:

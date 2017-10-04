@@ -1,0 +1,5 @@
+.word 13
+.word 12
+.org 0x0000000002
+.word 13
+.word 12

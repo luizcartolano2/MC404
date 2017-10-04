@@ -1,4 +1,4 @@
-.org 3
+.org3
 ADD "10"
 ADD "10"
 .org 0

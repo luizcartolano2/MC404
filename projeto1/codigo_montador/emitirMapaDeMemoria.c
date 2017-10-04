@@ -47,7 +47,7 @@ int achaSimbolo(char* palavra);
 int achaRotulo(char* palavra);
 
 void printaMapaDeMemoria();
-void imprimeMnemonico (char* palavra);
+void printaMnemonico (char* palavra);
 void printaHexadecimal(int numDeDigitos, int valorImprimir);
 
 /* Retorna:
@@ -168,13 +168,111 @@ void printaMapaDeMemoria() {
       }
     }
     else if (tokenRecuperado.tipo == Instrucao) {
+      Token valorPreencher;
+      if (i+1 < numDeTokens) {
+        valorPreencher = recuperaToken(i+1);
+      }
+      int valorMemoria;
+      int ladoMemoria = -1;
+      if (valorPreencher.tipo == Hexadecimal) {
+        valorMemoria = converteHexToDec(valorPreencher.palavra);
+      } else if (valorPreencher.tipo == Decimal) {
+        valorMemoria = atoi(valorPreencher.palavra);
+      } else {
+        int indiceRotulo = achaRotulo(valorPreencher.palavra);
+        if(indiceRotulo != -1) {
+          valorMemoria = rotulosDefinidos[indiceRotulo].posicao;
+          ladoMemoria = rotulosDefinidos[indiceRotulo].lado;
+        }
+      }
+
       if (memoria.lado == 1) {
+        if ((strcmp(tokenRecuperado.palavra,"JUMP") == 0) || (strcmp(tokenRecuperado.palavra,"JMP+") == 0) || (strcmp(tokenRecuperado.palavra,"STORA") == 0)) {
+          if (ladoMemoria == 0) {
+            if (strcmp(tokenRecuperado.palavra,"JUMP") == 0) {
+              printaMnemonico("JUMP_E");
+            } else if (strcmp(tokenRecuperado.palavra,"JMP+") == 0) {
+              printaMnemonico("JMP+_E");
+            } else {
+              printaMnemonico("STORA_E");
+            }
+          } else if (ladoMemoria == 1) {
+            if (strcmp(tokenRecuperado.palavra,"JUMP") == 0) {
+              printaMnemonico("JUMP_D");
+            } else if (strcmp(tokenRecuperado.palavra,"JMP+") == 0) {
+              printaMnemonico("JMP+_D");
+            } else {
+              printaMnemonico("STORA_D");
+            }
+          } else {
+            // se ladoMemoria for igual a -1, entao a posicao eh um decimal ou um Hexadecimal, que consideramos estar no lado esquerdo
+            if (strcmp(tokenRecuperado.palavra,"JUMP") == 0) {
+              printaMnemonico("JUMP_E");
+            } else if (strcmp(tokenRecuperado.palavra,"JMP+") == 0) {
+              printaMnemonico("JMP+_E");
+            } else {
+              printaMnemonico("STORA_E");
+            }
+          }
+          // por fim printamos o endereco de memoria
+          printaHexadecimal(3,valorMemoria);
+        } else if ((strcmp(tokenRecuperado.palavra,"RSH") == 0) || (strcmp(tokenRecuperado.palavra,"LSH") == 0) || (strcmp(tokenRecuperado.palavra,"LOADmq") == 0)) {
+          printaMnemonico(tokenRecuperado.palavra);
+        } else {
+          //printaMnemonico
+          printaMnemonico(tokenRecuperado.palavra);
+          printaHexadecimal(3,valorMemoria);
+        }
         (memoria.posicao)++;
         memoria.lado = 0;
       } else {
+        // printamos o endereco de memoria
+        printaHexadecimal(3,memoria.posicao);
+
+        if ((strcmp(tokenRecuperado.palavra,"JUMP") == 0) || (strcmp(tokenRecuperado.palavra,"JMP+") == 0) || (strcmp(tokenRecuperado.palavra,"STORA") == 0)) {
+          if (ladoMemoria == 0) {
+            if (strcmp(tokenRecuperado.palavra,"JUMP") == 0) {
+              printaMnemonico("JUMP_E");
+            } else if (strcmp(tokenRecuperado.palavra,"JMP+") == 0) {
+              printaMnemonico("JMP+_E");
+            } else {
+              printaMnemonico("STORA_E");
+            }
+          } else if (ladoMemoria == 1) {
+            if (strcmp(tokenRecuperado.palavra,"JUMP") == 0) {
+              printaMnemonico("JUMP_D");
+            } else if (strcmp(tokenRecuperado.palavra,"JMP+") == 0) {
+              printaMnemonico("JMP+_D");
+            } else {
+              printaMnemonico("STORA_D");
+            }
+          } else {
+            // se ladoMemoria for igual a -1, entao a posicao eh um decimal ou um Hexadecimal, que consideramos estar no lado esquerdo
+            if (strcmp(tokenRecuperado.palavra,"JUMP") == 0) {
+              printaMnemonico("JUMP_E");
+            } else if (strcmp(tokenRecuperado.palavra,"JMP+") == 0) {
+              printaMnemonico("JMP+_E");
+            } else {
+              printaMnemonico("STORA_E");
+            }
+          }
+          // por fim printamos o endereco de memoria
+          printaHexadecimal(3,valorMemoria);
+        } else if ((strcmp(tokenRecuperado.palavra,"RSH") == 0) || (strcmp(tokenRecuperado.palavra,"LSH") == 0) || (strcmp(tokenRecuperado.palavra,"LOADmq") == 0)) {
+          printaMnemonico(tokenRecuperado.palavra);
+        } else {
+          //printaMnemonico
+          printaMnemonico(tokenRecuperado.palavra);
+          printaHexadecimal(3,valorMemoria);
+        }
+
         memoria.lado = 1;
       }
     }
+  }
+
+  if (memoria.lado == 1) {
+    printf("00 000\n");
   }
 }
 
@@ -440,7 +538,7 @@ long int converteHexToDec (char* palavra) {
 }
 
 // funcao que fornece o Hexadecimal correspondente a cada instrucao
-void imprimeMnemonico (char* palavra) {
+void printaMnemonico (char* palavra) {
   /* verifica se eh um LOAD_M */
   if (strcmp(palavra,"LOAD") == 0) {
     printf("01 ");
