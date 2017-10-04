@@ -32,7 +32,6 @@ int numPosicoesMemoriaUsadas;
 int achaPosicaoMemoria(int posicao);
 
 long int converteHexToDec (char* palavra);
-char* forneceMnemonico (char* palavra);
 
 // funcoes que manipulam as tabelas de rotulo e simbolos declarados
 RotuloDef criaNovoRotulo(char* nome, int posicao, int lado);
@@ -46,6 +45,11 @@ void imprimeListaSimbolos();
 int achaErroDefinicao();
 int achaSimbolo(char* palavra);
 int achaRotulo(char* palavra);
+
+void printaMapaDeMemoria();
+void imprimeMnemonico (char* palavra);
+void printaHexadecimal(int numDeDigitos, int valorImprimir);
+
 /* Retorna:
 *  1 caso haja erro na montagem;
 *  0 caso não haja erro.
@@ -64,8 +68,8 @@ int emitirMapaDeMemoria() {
   if (criaTabelaDefinicoes() == 0) {
     return 1;
   }
-  imprimeListaSimbolos();
-  imprimeListaRotulos();
+  // imprimeListaSimbolos();
+  // imprimeListaRotulos();
   // antes de dar proseguimento a montagem verficamos se tem alguma palavra sendo usada sem estar definida
   if (achaErroDefinicao() == 0) {
     return 1;
@@ -75,7 +79,122 @@ int emitirMapaDeMemoria() {
   memoria.posicao = 0;
   memoria.lado = 0;
 
+  printaMapaDeMemoria();
+
   return 0;
+
+}
+
+void printaMapaDeMemoria() {
+  int numDeTokens = getNumberOfTokens();
+
+  for (int i = 0; i < numDeTokens; i++) {
+
+    Token tokenRecuperado = recuperaToken(i);
+
+    if (tokenRecuperado.tipo == Diretiva) {
+      if (strcmp(tokenRecuperado.palavra,".org") == 0) {
+        /* Pensar em como verificar se essa posicao ja foi usada */
+        Token tokenPosicaoDeMemoria = recuperaToken(i+1);
+        if (tokenPosicaoDeMemoria.tipo == Hexadecimal) {
+          int novaPosicao = (int)converteHexToDec(tokenPosicaoDeMemoria.palavra);
+          memoria.posicao = novaPosicao;
+          memoria.lado = 0;
+        } else {
+          int novaPosicao = atoi(tokenPosicaoDeMemoria.palavra);
+          memoria.posicao = novaPosicao;
+          memoria.lado = 0;
+        }
+      }
+      else if (strcmp(tokenRecuperado.palavra,".align") == 0) {
+        Token parametro = recuperaToken(i+1);
+        int multiplo = atoi(parametro.palavra);
+        if (memoria.lado == 1) {
+          printf("00 000\n");
+          memoria.lado = 0;
+          (memoria.posicao)++;
+        } while (memoria.posicao % multiplo != 0) {
+          (memoria.posicao)++;
+        }
+      }
+      else if (strcmp(tokenRecuperado.palavra,".wfill") == 0) {
+        Token parametro = recuperaToken(i+1);
+        int posicoesAOcupar = atoi(parametro.palavra);
+        Token valorPreencher = recuperaToken(i+2);
+
+        int valor;
+        if (valorPreencher.tipo == Hexadecimal) {
+          valor = converteHexToDec(valorPreencher.palavra);
+        } else if (valorPreencher.tipo == Decimal) {
+          valor = atoi(valorPreencher.palavra);
+        } else {
+          int indiceRotulo = achaRotulo(valorPreencher.palavra);
+          if(indiceRotulo != -1) {
+            valor = rotulosDefinidos[indiceRotulo].posicao;
+          } else {
+            int indiceSimbolo = achaSimbolo(valorPreencher.palavra);
+            valor = simbolosDefinidos[indiceSimbolo].valor;
+          }
+        }
+        for (int i = 0; i < posicoesAOcupar; i++) {
+          // printa a posicao de memoria
+          printaHexadecimal(3,memoria.posicao);
+          // printa o valor q ira ocupar essa posicao de memoria
+          printaHexadecimal(10,valor);
+          // atualiza a posicao de memoria
+          (memoria.posicao)++;
+        }
+      }
+      else if (strcmp(tokenRecuperado.palavra,".word") == 0) {
+        Token valorPreencher = recuperaToken(i+1);
+        int valor;
+        if (valorPreencher.tipo == Hexadecimal) {
+          valor = converteHexToDec(valorPreencher.palavra);
+        } else if (valorPreencher.tipo == Decimal) {
+          valor = atoi(valorPreencher.palavra);
+        } else {
+          int indiceRotulo = achaRotulo(valorPreencher.palavra);
+          if(indiceRotulo != -1) {
+            valor = rotulosDefinidos[indiceRotulo].posicao;
+          } else {
+            int indiceSimbolo = achaSimbolo(valorPreencher.palavra);
+            valor = simbolosDefinidos[indiceSimbolo].valor;
+          }
+        }
+        // printa a posicao de memoria
+        printaHexadecimal(3,memoria.posicao);
+        printaHexadecimal(10,valor);
+        (memoria.posicao)++;
+      }
+    }
+    else if (tokenRecuperado.tipo == Instrucao) {
+      if (memoria.lado == 1) {
+        (memoria.posicao)++;
+        memoria.lado = 0;
+      } else {
+        memoria.lado = 1;
+      }
+    }
+  }
+}
+
+void printaHexadecimal(int numDeDigitos, int valorImprimir) {
+
+  if (numDeDigitos == 3) {
+    char* buffer = malloc(sizeof(10));
+    sprintf(buffer,"%03X",valorImprimir);
+    if (memoria.lado == 1) {
+      printf("%c%c%c\n",buffer[0],buffer[1],buffer[2]);
+    } else {
+      printf("%c%c%c ",buffer[0],buffer[1],buffer[2]);
+    }
+    free(buffer);
+  } else if (numDeDigitos == 10) {
+    char* buffer = malloc(sizeof(4));
+    sprintf(buffer,"%010X",valorImprimir);
+    printf("%c%c %c%c%c %c%c %c%c%c\n",buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7],buffer[8],buffer[9]);
+    free(buffer);
+  }
 
 }
 
@@ -91,7 +210,7 @@ int achaErroDefinicao() {
         if (tokenVerificar.tipo == Nome) {
           int verificaRotulo = achaRotulo(tokenVerificar.palavra);
           int verificaSimbolo = achaSimbolo(tokenVerificar.palavra);
-          if ((verificaRotulo == 0) && (verificaSimbolo == 0)) {
+          if ((verificaRotulo == -1) && (verificaSimbolo == -1)) {
             fprintf(stderr, "USADO MAS NÃO DEFINIDO: %s!\n",tokenVerificar.palavra);
             return 0;
           }
@@ -102,7 +221,7 @@ int achaErroDefinicao() {
         if (tokenVerificar.tipo == Nome) {
           int verificaRotulo = achaRotulo(tokenVerificar.palavra);
           int verificaSimbolo = achaSimbolo(tokenVerificar.palavra);
-          if ((verificaRotulo == 0) && (verificaSimbolo == 0)) {
+          if ((verificaRotulo == -1) && (verificaSimbolo == -1)) {
             fprintf(stderr, "USADO MAS NÃO DEFINIDO: %s!\n",tokenVerificar.palavra);
             return 0;
           }
@@ -114,7 +233,7 @@ int achaErroDefinicao() {
         if (tokenVerificar.tipo == Nome) {
           int verificaRotulo = achaRotulo(tokenVerificar.palavra);
           int verificaSimbolo = achaSimbolo(tokenVerificar.palavra);
-          if ((verificaRotulo == 0) && (verificaSimbolo == 0)) {
+          if ((verificaRotulo == -1) && (verificaSimbolo == -1)) {
             fprintf(stderr, "USADO MAS NÃO DEFINIDO: %s!\n",tokenVerificar.palavra);
             return 0;
           }
@@ -130,19 +249,19 @@ int achaErroDefinicao() {
 int achaRotulo(char* palavra) {
   for (int i = 0; i < numRotulosDefinidos; i++) {
     if (strcmp(palavra,rotulosDefinidos[i].palavra) == 0) {
-      return 1;
+      return i;
     }
   }
-  return 0;
+  return -1;
 }
 
 int achaSimbolo(char* palavra) {
   for (int i = 0; i < numSimbolosDefinidos; i++) {
     if (strcmp(palavra,simbolosDefinidos[i].palavra) == 0) {
-      return 1;
+      return i;
     }
   }
-  return 0;
+  return -1;
 }
 
 int criaTabelaDefinicoes() {
@@ -321,70 +440,80 @@ long int converteHexToDec (char* palavra) {
 }
 
 // funcao que fornece o Hexadecimal correspondente a cada instrucao
-char* forneceMnemonico (char* palavra) {
+void imprimeMnemonico (char* palavra) {
   /* verifica se eh um LOAD_M */
   if (strcmp(palavra,"LOAD") == 0) {
-    return "01";
+    printf("01 ");
     /* verifica se eh um LOAD_MENOS_M */
   } else if (strcmp(palavra,"LOAD-") == 0) {
-    return "02";
+    printf("02 ");
     /* verifica se eh um LOAD_MODULO */
   } else if (strcmp(palavra,"LOAD|") == 0) {
-    return "03";
+    printf("03 ");
     /* verifica se eh um LOAD_MQ */
   } else if (strcmp(palavra,"LOADmq") == 0) {
-    return "0A";
-    /* verifica se eh um LOAD_MQ_MX */
+    if (memoria.lado == 1) {
+      printf("0A 000\n");
+    } else {
+      printf("0A 000 ");
+    }
   } else if (strcmp(palavra,"LOADmq_mx") == 0) {
-    return "09";
+    printf("09 ");
     /* verifica se eh um STOR */
   } else if (strcmp(palavra,"STOR") == 0) {
-    return "21";
+    printf("21 ");
     /* verifica se eh um JUMP */
   } else if (strcmp(palavra,"JUMP_E") == 0) {
-    return "0D";
+    printf("0D ");
     /* verifica se eh um JUMP_COND */
   } else if (strcmp(palavra,"JUMP_D") == 0) {
-    return "0E";
+    printf("0E ");
     /* verifica se eh um JUMP_COND */
   } else if (strcmp(palavra,"JMP+_E") == 0) {
-    return "0F";
-
+    printf("0F ");
   }else if (strcmp(palavra,"JMP+_D") == 0) {
-    return "10";
+    printf("10 ");
     /* verifica se eh um ADD */
   } else if (strcmp(palavra,"ADD") == 0) {
-    return "05";
+    printf("05 ");
     /* verifica se eh um ADD_MODULO */
   } else if (strcmp(palavra,"ADD|") == 0) {
-    return "07";
+    printf("07 ");
     /* verifica se eh um SUB */
   } else if (strcmp(palavra,"SUB") == 0) {
-    return "06";
+    printf("06 ");
     /* verifica se eh um SUB_MODULO */
   } else if (strcmp(palavra,"SUB|") == 0) {
-    return "08";
+    printf("08 ");
     /* verifica se eh um MUL */
   } else if (strcmp(palavra,"MUL") == 0) {
-    return "0B";
+    printf("0B ");
     /* verifica se eh um DIV */
   } else if (strcmp(palavra,"DIV") == 0) {
-    return "0C";
+    printf("0C ");
     /* verifica se eh um LSH */
   } else if (strcmp(palavra,"LSH") == 0) {
-    return "14";
+    if (memoria.lado == 1) {
+      printf("14 000\n");
+    } else {
+      printf("14 000 ");
+    }
     /* verifica se eh um RSh */
   } else if (strcmp(palavra,"RSH") == 0) {
-    return "15";
+    if (memoria.lado == 1) {
+      printf("15 000\n");
+    } else {
+      printf("15 000 ");
+    }
     /* verifica se eh um STOR_M */
   } else if (strcmp(palavra,"STORA_E") == 0) {
-    return "12";
+    printf("12 ");
 
   } else if (strcmp(palavra,"STORA_D") == 0) {
-    return "13";
+    printf("13 ");
     /* instrucao eh invalida */
   } else {
-    return "ERRROOO";
+    printf("Deu ruim ! ¯_(ツ)_/¯");
   }
 }
 

@@ -3,29 +3,16 @@
 #include <string.h>
 #include <math.h>
 
-char* copiaNomeToken(char* palavra) {
-  int tamanho = strlen(palavra);
-  char* copia = malloc(sizeof(tamanho));
-  int j = 0;
 
-  for (int i = 0; i < tamanho; i++) {
-    if (palavra[i] == ':') {
-      copia[i] = '\0';
-    } else {
-      copia[j] = palavra[i];
-      j++;
-    }
-  }
-  return copia;
-
-}
 int main(int argc, char const *argv[]) {
 
-  char* palavra = "________vetor______:";
+  int i = 10;
+  char* buffer = malloc(sizeof(10));
 
-  char* copia = copiaNomeToken(palavra);
+  sprintf(buffer,"%010X",i);
+  printf("%010X\n",i);
 
-  printf("%s\n",copia);
+  printf("%c%c %c%c%c %c%c %c%c%c\n",buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7],buffer[8],buffer[9]);
 
   return 0;
 

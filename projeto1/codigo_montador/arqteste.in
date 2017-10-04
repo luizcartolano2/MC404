@@ -1,3 +1,4 @@
-.org 0
-.wfill 10 100
-var1:
+ADD 10
+RSH
+rot1:
+.word rot1
