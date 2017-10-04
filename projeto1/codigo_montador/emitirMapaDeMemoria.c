@@ -27,7 +27,7 @@ typedef struct Memoria {
   int lado; //0 - Esquerda, 1 - Direita
 }Memoria;
 Memoria memoria;
-int posicoesMemoriaUsadas[1025];
+int posicoesMemoriaUsadas[1100];
 int numPosicoesMemoriaUsadas;
 int achaPosicaoMemoria(int posicao);
 
@@ -55,6 +55,10 @@ void printaHexadecimal(int numDeDigitos, int valorImprimir);
 *  0 caso não haja erro.
 */
 int emitirMapaDeMemoria() {
+
+  for (int i = 0; i < 1100; i++)
+    posicoesMemoriaUsadas[i] = -1;
+
   // iniciamos a montagem no lado esquerdo da posicao 0
   memoria.posicao = 0;
   memoria.lado = 0;
@@ -405,13 +409,8 @@ int criaTabelaDefinicoes() {
           memoria.posicao = novaPosicao;
           memoria.lado = 0;
         }
-        if (achaPosicaoMemoria(memoria.posicao) == 0) {
-          fprintf(stderr, "Impossível montar o código!\n");
-          return 0;
-        } else {
-          posicoesMemoriaUsadas[numPosicoesMemoriaUsadas] = memoria.posicao;
-          numPosicoesMemoriaUsadas++;
-        }
+        posicoesMemoriaUsadas[numPosicoesMemoriaUsadas] = memoria.posicao;
+        numPosicoesMemoriaUsadas++;
       }
       else if (strcmp(tokenRecuperado.palavra,".align") == 0) {
         Token parametro = recuperaToken(i+1);
@@ -419,12 +418,10 @@ int criaTabelaDefinicoes() {
         if (memoria.lado == 1) {
           memoria.lado = 0;
           (memoria.posicao)++;
-          posicoesMemoriaUsadas[numPosicoesMemoriaUsadas] = memoria.posicao;
-          numPosicoesMemoriaUsadas++;
+          posicoesMemoriaUsadas[memoria.posicao] = 1;
         } while (memoria.posicao % multiplo != 0) {
+          posicoesMemoriaUsadas[memoria.posicao] = 1;
           (memoria.posicao)++;
-          posicoesMemoriaUsadas[numPosicoesMemoriaUsadas] = memoria.posicao;
-          numPosicoesMemoriaUsadas++;
         }
       }
       else if (strcmp(tokenRecuperado.palavra,".wfill") == 0) {
@@ -440,11 +437,17 @@ int criaTabelaDefinicoes() {
           fprintf(stderr, "Impossível montar o código!\n");
           return 0;
         }
-        for (int i = memoria.posicao; i < memoria.posicao + posicoesAOcupar; i++) {
-          posicoesMemoriaUsadas[numPosicoesMemoriaUsadas] = i;
-          numPosicoesMemoriaUsadas++;
+
+        int inicio = memoria.posicao;
+        int fim = memoria.posicao + posicoesAOcupar;
+        for (int i = inicio; i < fim; i++) {
+          if (achaPosicaoMemoria(memoria.posicao) == 0) {
+             fprintf(stderr, "Impossível montar o código!\n");
+             return 0;
+          }
+          posicoesMemoriaUsadas[memoria.posicao] = 1;
+          (memoria.posicao)++;
         }
-        memoria.posicao = memoria.posicao + posicoesAOcupar;
 
       }
       else if (strcmp(tokenRecuperado.palavra,".word") == 0) {
@@ -457,19 +460,25 @@ int criaTabelaDefinicoes() {
           fprintf(stderr, "Impossível montar o código!\n");
           return 0;
         }
-        memoria.posicao = memoria.posicao + 1;
-        posicoesMemoriaUsadas[numPosicoesMemoriaUsadas] = memoria.posicao;
-        numPosicoesMemoriaUsadas++;
+        if (achaPosicaoMemoria(memoria.posicao) == 0) {
+          fprintf(stderr, "Impossível montar o código!\n");
+          return 0;
+        }
+        posicoesMemoriaUsadas[memoria.posicao] = 1;
+        (memoria.posicao)++;
       }
     }
     else if (tokenRecuperado.tipo == Instrucao) {
       if (memoria.posicao <= 1024) {
         if (memoria.lado == 1) {
+          posicoesMemoriaUsadas[memoria.posicao] = 1;
           (memoria.posicao)++;
           memoria.lado = 0;
-          posicoesMemoriaUsadas[numPosicoesMemoriaUsadas] = memoria.posicao;
-          numPosicoesMemoriaUsadas++;
         } else {
+          if (achaPosicaoMemoria(memoria.posicao) == 0) {
+            fprintf(stderr, "Impossível montar o código!\n");
+            return 0;
+          }
           memoria.lado = 1;
         }
       } else {
@@ -484,12 +493,10 @@ int criaTabelaDefinicoes() {
 }
 
 int achaPosicaoMemoria(int posicao) {
-  for (int i = 0; i < numPosicoesMemoriaUsadas; i++) {
-    if (posicoesMemoriaUsadas[i] == posicao) {
-      return 0;
-    }
-  }
-  return 1;
+  if(posicoesMemoriaUsadas[posicao] == -1)
+    return 1;
+  else
+    return 0;
 }
 
 // funcao generica que cria um novo RotuloDefinido
