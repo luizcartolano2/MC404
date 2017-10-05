@@ -28,7 +28,7 @@ typedef struct Memoria {
 }Memoria;
 Memoria memoria;
 int posicoesMemoriaUsadas[1100];
-int numPosicoesMemoriaUsadas;
+
 int achaPosicaoMemoria(int posicao);
 
 long int converteHexToDec (char* palavra);
@@ -56,13 +56,15 @@ void printaHexadecimal(int numDeDigitos, int valorImprimir);
 */
 int emitirMapaDeMemoria() {
 
-  for (int i = 0; i < 1100; i++)
-    posicoesMemoriaUsadas[i] = -1;
+  for (int i = 0; i < 1100; i++){
+    posicoesMemoriaUsadas[i]= -1;
+    // posicoesMemoriaUsadas[i].lado = -1;
+  }
 
   // iniciamos a montagem no lado esquerdo da posicao 0
   memoria.posicao = 0;
   memoria.lado = 0;
-  numPosicoesMemoriaUsadas = 0;
+  // numPosicoesMemoriaUsadas = 0;
 
   // seta como 0 o valor inicial para o numero de rotulos e simbolos definidos
   numRotulosDefinidos = 0;
@@ -351,8 +353,10 @@ int achaErroDefinicao() {
 }
 
 int achaRotulo(char* palavra) {
+  // printf("numRotulosDefinidos: %d\n",numRotulosDefinidos);
   for (int i = 0; i < numRotulosDefinidos; i++) {
     if (strcmp(palavra,rotulosDefinidos[i].palavra) == 0) {
+      // printf("%s\n",palavra);
       return i;
     }
   }
@@ -378,6 +382,11 @@ int criaTabelaDefinicoes() {
     // se o token for a definicao de um rotulo, entao o adicionamos na tabela de rotulos que estamos criando
     if (tokenRecuperado.tipo == DefRotulo) {
       char* palavra = copiaNomeToken(tokenRecuperado.palavra);
+      int rotuloExiste = achaRotulo(palavra);
+      if (rotuloExiste != -1){
+        fprintf(stderr, "Rotulo ja definido!\n");
+        return 0;
+      }
       RotuloDef novoRotulo = criaNovoRotulo(palavra, memoria.posicao, memoria.lado);
       rotulosDefinidos[numRotulosDefinidos] = novoRotulo;
       numRotulosDefinidos++;
@@ -386,6 +395,10 @@ int criaTabelaDefinicoes() {
       // se o token for um .set entao ele esta definindo um simbolo, logo devemos adicionar esse simbolo a nossa tabela
       if (strcmp(tokenRecuperado.palavra,".set") == 0) {
         Token simboloDefinido = recuperaToken(i+1);
+        if (achaSimbolo(simboloDefinido.palavra) != -1){
+          fprintf(stderr, "Simbolo ja definido!\n");
+          return 0;
+        }
         Token valorDoSimbolo = recuperaToken(i+2);
         if (valorDoSimbolo.tipo == Hexadecimal) {
           int valor = (int)converteHexToDec(valorDoSimbolo.palavra);
@@ -493,7 +506,7 @@ int criaTabelaDefinicoes() {
 }
 
 int achaPosicaoMemoria(int posicao) {
-  if(posicoesMemoriaUsadas[posicao] == -1)
+  if (posicoesMemoriaUsadas[posicao] == -1)
     return 1;
   else
     return 0;
