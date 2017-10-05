@@ -28,6 +28,7 @@ typedef struct Memoria {
 }Memoria;
 Memoria memoria;
 int posicoesMemoriaUsadas[1100];
+int esquerdaMemoriaUsadas[1100];
 
 int achaPosicaoMemoria(int posicao);
 
@@ -57,7 +58,8 @@ void printaHexadecimal(int numDeDigitos, int valorImprimir);
 int emitirMapaDeMemoria() {
 
   for (int i = 0; i < 1100; i++){
-    posicoesMemoriaUsadas[i]= -1;
+    posicoesMemoriaUsadas[i] = -1;
+    esquerdaMemoriaUsadas[i] = -1;
     // posicoesMemoriaUsadas[i].lado = -1;
   }
 
@@ -459,6 +461,7 @@ int criaTabelaDefinicoes() {
              return 0;
           }
           posicoesMemoriaUsadas[memoria.posicao] = 1;
+          esquerdaMemoriaUsadas[memoria.posicao] = 1;
           (memoria.posicao)++;
         }
 
@@ -478,6 +481,7 @@ int criaTabelaDefinicoes() {
           return 0;
         }
         posicoesMemoriaUsadas[memoria.posicao] = 1;
+        esquerdaMemoriaUsadas[memoria.posicao] = 1;
         (memoria.posicao)++;
       }
     }
@@ -492,7 +496,13 @@ int criaTabelaDefinicoes() {
             fprintf(stderr, "Impossível montar o código!\n");
             return 0;
           }
-          memoria.lado = 1;
+          if (esquerdaMemoriaUsadas[memoria.posicao] == -1){
+            memoria.lado = 1;
+            esquerdaMemoriaUsadas[memoria.posicao] = 1;
+          } else {
+            fprintf(stderr, "Impossível montar o código!\n");
+            return 0;
+          }
         }
       } else {
         fprintf(stderr, "Impossível montar o código!\n");

@@ -1,2 +1,2 @@
-.set TEMP 23
-.set TEMP 23
+
+.wfill 1023 0x00000000A5
