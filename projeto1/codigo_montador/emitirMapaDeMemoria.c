@@ -98,7 +98,9 @@ void printaMapaDeMemoria() {
 
     if (tokenRecuperado.tipo == Diretiva) {
       if (strcmp(tokenRecuperado.palavra,".org") == 0) {
-        /* Pensar em como verificar se essa posicao ja foi usada */
+        if (memoria.lado == 1) {
+          printf("00 000\n");
+        }
         Token tokenPosicaoDeMemoria = recuperaToken(i+1);
         if (tokenPosicaoDeMemoria.tipo == Hexadecimal) {
           int novaPosicao = (int)converteHexToDec(tokenPosicaoDeMemoria.palavra);
@@ -409,8 +411,6 @@ int criaTabelaDefinicoes() {
           memoria.posicao = novaPosicao;
           memoria.lado = 0;
         }
-        posicoesMemoriaUsadas[numPosicoesMemoriaUsadas] = memoria.posicao;
-        numPosicoesMemoriaUsadas++;
       }
       else if (strcmp(tokenRecuperado.palavra,".align") == 0) {
         Token parametro = recuperaToken(i+1);

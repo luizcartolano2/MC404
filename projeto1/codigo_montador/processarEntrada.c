@@ -52,7 +52,7 @@ int processarEntrada(char* entrada, unsigned tamanho) {
   while (linha != NULL) {
     palavra = strtok(linha," \t");
     while (palavra != NULL) {
-      if (strcmp(palavra,"#") == 0) {
+      if (palavra[0] == '#') {
         palavra = NULL;
       } else {
           manipulaPalavra(palavra);
@@ -66,7 +66,7 @@ int processarEntrada(char* entrada, unsigned tamanho) {
   if(achaErroGramatical() == 0)
     return 1;
 
-  //imprimeListaTokens();
+  // imprimeListaTokens();
 
   return 0;
 

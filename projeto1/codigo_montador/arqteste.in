@@ -1,12 +1,5 @@
-.org 3
-ADD "10"
-ADD "10"
 .org 0
-ADD "10"
-ADD "10"
-ADD "10"
-ADD "10"
-ADD "10"
-ADD "10"
-ADD "10"
-ADD "10"
+ADD 0x0000000000 #oiiii
+.org 0
+.align 2
+ADD 01
