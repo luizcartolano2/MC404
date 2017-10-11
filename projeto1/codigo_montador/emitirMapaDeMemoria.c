@@ -1,55 +1,60 @@
+/**************************************
+* Aluno: Luiz Eduardo T. C. Cartolano *
+* RA: 183012                          *
+* Turma: B                            *
+***************************************/
 #include "montador.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
-// tabela que contera todos os rotulos que foram definidos
+// struct que servira como uma "estrutura" para armazenar os rotulos ja definidos
 typedef struct RotuloDef {
   char* palavra;
   int posicao;
   int lado; //0 - Esquerda, 1 - Direita
 } RotuloDef;
+// tabela que contera todos os rotulos que foram definidos
 RotuloDef rotulosDefinidos[4096];
 int numRotulosDefinidos;
 
-// tabela que contera todos os simbolos que foram definidos
+// struct que servira como uma "estrutura" para armazenar os simbolos ja definidos
 typedef struct SimboloDef {
   char* palavra;
   int valor;
 } SimboloDef;
+// tabela que contera todos os simbolos que foram definidos
 SimboloDef simbolosDefinidos[4096];
 int numSimbolosDefinidos;
 
-// estrutura de memoria do IAS
+// estrutura de memoria do IAS (seria como o PC do IAS)
 typedef struct Memoria {
   int posicao;
   int lado; //0 - Esquerda, 1 - Direita
 }Memoria;
 Memoria memoria;
+
+// declaracao de dois vetores que irao servir de controle para as posicoes de memoria ja escritas
 int posicoesMemoriaUsadas[1100];
 int esquerdaMemoriaUsadas[1100];
 
-int achaPosicaoMemoria(int posicao);
-
-long int converteHexToDec (char* palavra);
-
-// funcoes que manipulam as tabelas de rotulo e simbolos declarados
+// funcoes que manipulam as tabelas de rotulo e simbolos declarados (e verificam os erros de memoria)
 RotuloDef criaNovoRotulo(char* nome, int posicao, int lado);
 SimboloDef criaNovoSimbolo(char* palavra, int valor);
 int criaTabelaDefinicoes();
 char* copiaNomeToken(char* palavra);
-void imprimeListaRotulos();
-void imprimeListaSimbolos();
+int achaPosicaoMemoria(int posicao);
 
 // funcoes que lidam com os erros de definicao
 int achaErroDefinicao();
 int achaSimbolo(char* palavra);
 int achaRotulo(char* palavra);
 
+// funcoes que manipulam as impressoes do mapa de memoria
 void printaMapaDeMemoria();
 void printaMnemonico (char* palavra);
-void printaHexadecimal(int numDeDigitos, int valorImprimir);
+void printaHexadecimal(int numDeDigitos, long int valorImprimir);
+long int converteHexToDec (char* palavra);
 
 /* Retorna:
 *  1 caso haja erro na montagem;
@@ -57,42 +62,44 @@ void printaHexadecimal(int numDeDigitos, int valorImprimir);
 */
 int emitirMapaDeMemoria() {
 
+  // iniciar com -1 os vetores de controle das posicoes de memoria
   for (int i = 0; i < 1100; i++){
     posicoesMemoriaUsadas[i] = -1;
     esquerdaMemoriaUsadas[i] = -1;
-    // posicoesMemoriaUsadas[i].lado = -1;
   }
 
   // iniciamos a montagem no lado esquerdo da posicao 0
   memoria.posicao = 0;
   memoria.lado = 0;
-  // numPosicoesMemoriaUsadas = 0;
 
   // seta como 0 o valor inicial para o numero de rotulos e simbolos definidos
   numRotulosDefinidos = 0;
   numSimbolosDefinidos = 0;
 
-  // criamos as tabelas de rotulos e simbolos ja definidos (e imprimimos apenas para verificacao)
+  // criamos as tabelas de rotulos e simbolos ja definidos, se der erro encerra a montagem
   if (criaTabelaDefinicoes() == 0) {
     return 1;
   }
-  // imprimeListaSimbolos();
-  // imprimeListaRotulos();
+
   // antes de dar proseguimento a montagem verficamos se tem alguma palavra sendo usada sem estar definida
   if (achaErroDefinicao() == 0) {
     return 1;
   }
 
-  // apos criada as tabelas, reiniciamos a montagem no lado esquerdo da posicao 0
+  // apos criada as tabelas, reiniciamos "PC" para o lado esquerdo da posicao 0
   memoria.posicao = 0;
   memoria.lado = 0;
 
+  // chama a funcao que ira imprimir o mapa
   printaMapaDeMemoria();
 
   return 0;
 
 }
 
+/*
+ * A funcao nao possui entrada e nem retorno, ao ser chamada ela printa o mapa de memoria emitido
+ */
 void printaMapaDeMemoria() {
   int numDeTokens = getNumberOfTokens();
 
@@ -132,7 +139,7 @@ void printaMapaDeMemoria() {
         int posicoesAOcupar = atoi(parametro.palavra);
         Token valorPreencher = recuperaToken(i+2);
 
-        int valor;
+        long int valor;
         if (valorPreencher.tipo == Hexadecimal) {
           valor = converteHexToDec(valorPreencher.palavra);
         } else if (valorPreencher.tipo == Decimal) {
@@ -157,7 +164,7 @@ void printaMapaDeMemoria() {
       }
       else if (strcmp(tokenRecuperado.palavra,".word") == 0) {
         Token valorPreencher = recuperaToken(i+1);
-        int valor;
+        long int valor;
         if (valorPreencher.tipo == Hexadecimal) {
           valor = converteHexToDec(valorPreencher.palavra);
         } else if (valorPreencher.tipo == Decimal) {
@@ -182,7 +189,7 @@ void printaMapaDeMemoria() {
       if (i+1 < numDeTokens) {
         valorPreencher = recuperaToken(i+1);
       }
-      int valorMemoria;
+      long int valorMemoria;
       int ladoMemoria = -1;
       if (valorPreencher.tipo == Hexadecimal) {
         valorMemoria = converteHexToDec(valorPreencher.palavra);
@@ -286,11 +293,18 @@ void printaMapaDeMemoria() {
   }
 }
 
-void printaHexadecimal(int numDeDigitos, int valorImprimir) {
+/*
+ * Argumentos:
+ *  numDeDigitos: numero de digitos do decimal a ser impresso
+ *  valorImprimir: numero decimal a ser impresso (em Hexadecimal)
+ * Retorna:
+ *  A funcao nao possui retorno, ela apenas printa o numero solicitado
+ */
+void printaHexadecimal(int numDeDigitos, long int valorImprimir) {
 
   if (numDeDigitos == 3) {
     char* buffer = malloc(sizeof(10));
-    sprintf(buffer,"%03X",valorImprimir);
+    sprintf(buffer,"%03lX",valorImprimir);
     if (memoria.lado == 1) {
       printf("%c%c%c\n",buffer[0],buffer[1],buffer[2]);
     } else {
@@ -299,14 +313,24 @@ void printaHexadecimal(int numDeDigitos, int valorImprimir) {
     free(buffer);
   } else if (numDeDigitos == 10) {
     char* buffer = malloc(sizeof(4));
-    sprintf(buffer,"%010X",valorImprimir);
-    printf("%c%c %c%c%c %c%c %c%c%c\n",buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7],buffer[8],buffer[9]);
+    sprintf(buffer,"%010lX",valorImprimir);
+    if (valorImprimir < 0) {
+      printf("%c%c %c%c%c %c%c %c%c%c\n",buffer[6],buffer[7],buffer[8],buffer[9],buffer[10],buffer[11],buffer[12],buffer[13],buffer[14],buffer[15]);
+    } else {
+      printf("%c%c %c%c%c %c%c %c%c%c\n",buffer[0],buffer[1],buffer[2],buffer[3],buffer[4],buffer[5],buffer[6],buffer[7],buffer[8],buffer[9]);
+    }
     free(buffer);
   }
 
 }
 
-// funcao que cria as tabelas de simbolos e rotulos definidos
+/*
+ * Argumentos:
+ *  A funcao nao recebe argumentos, pois acessa vetores diretamente na memoria
+ * Retorna:
+ *  0 caso haja erro na montagem;
+ *  1 caso não haja erro.
+ */
 int achaErroDefinicao() {
   int numDeTokens = getNumberOfTokens();
   for (int i = 0; i < numDeTokens; i++) {
@@ -354,6 +378,13 @@ int achaErroDefinicao() {
 
 }
 
+/*
+ * Argumentos:
+ *  palavra: rotulo que devemos verificar se ja existe
+ * Retorna:
+ *  i - a posicao do rotulo no vetor de rotulos definidos
+ *  -1 -  caso o rotulo nao exista
+ */
 int achaRotulo(char* palavra) {
   // printf("numRotulosDefinidos: %d\n",numRotulosDefinidos);
   for (int i = 0; i < numRotulosDefinidos; i++) {
@@ -365,6 +396,13 @@ int achaRotulo(char* palavra) {
   return -1;
 }
 
+/*
+ * Argumentos:
+ *  palavra: simbolo que devemos verificar se ja existe
+ * Retorna:
+ *  i - a posicao do simbolo no vetor de simbolos definidos
+ *  -1 -  caso o simbolo nao exista
+ */
 int achaSimbolo(char* palavra) {
   for (int i = 0; i < numSimbolosDefinidos; i++) {
     if (strcmp(palavra,simbolosDefinidos[i].palavra) == 0) {
@@ -374,6 +412,11 @@ int achaSimbolo(char* palavra) {
   return -1;
 }
 
+/*
+ * Retorna:
+ *  1 - se der tudo certo na criacao dos rotulos e simbolos (e tambem se nao ha tentativa de escrita em lugar errado)
+ *  0 - caso haja uma palavra que deva ser escrita em lugar errado
+ */
 int criaTabelaDefinicoes() {
   int numDeTokens = getNumberOfTokens();
 
@@ -515,6 +558,13 @@ int criaTabelaDefinicoes() {
 
 }
 
+/*
+ * Argumentos:
+ *  posicao: posicao de memoria que quero verificar
+ * Retorna:
+ *  1 - se a posicao ainda nao foi usada
+ *  0 - se a posicao ja foi usada
+ */
 int achaPosicaoMemoria(int posicao) {
   if (posicoesMemoriaUsadas[posicao] == -1)
     return 1;
@@ -522,7 +572,14 @@ int achaPosicaoMemoria(int posicao) {
     return 0;
 }
 
-// funcao generica que cria um novo RotuloDefinido
+/*
+ * Argumentos:
+ *  nome: nome do rotulo que sera inserido na lista de rotulos
+ *  posicao: posicao que o rotulo ocupa no mapa de memoria
+ *  lado: lado da palavra de memoria que o rotulo ocupa
+ * Retorna:
+ *  novoRotulo - rotulo que sera adicionado a lista de rotulos
+ */
 RotuloDef criaNovoRotulo(char* nome, int posicao, int lado) {
   RotuloDef novoRotulo;
   novoRotulo.palavra = nome;
@@ -532,7 +589,13 @@ RotuloDef criaNovoRotulo(char* nome, int posicao, int lado) {
   return novoRotulo;
 }
 
-// funcao generica que cria um novo SimboloDefinido
+/*
+ * Argumentos:
+ *  palavra: nome do simbolo que sera inserido na lista de simbolos
+ *  valor: valor associado ao simbolo que esta sendo definido
+ * Retorna:
+ *  novoSimbolo - simbolo que sera adicionado a lista de simbolos
+ */
 SimboloDef criaNovoSimbolo(char* palavra, int valor) {
   SimboloDef novoSimbolo;
   novoSimbolo.palavra = palavra;
@@ -541,7 +604,12 @@ SimboloDef criaNovoSimbolo(char* palavra, int valor) {
   return novoSimbolo;
 }
 
-// funcao que copia o nome do token definido sem os ":", ja que essa sera a maneira que ele sera usado
+/*
+ * Argumentos:
+ *  palavra: rotulo com ":" ao final (que sera tratado)
+ * Retorna:
+ *  copia - rotulo sem os ":" ao final, que sera salvo na lista de rotulos definidos
+ */
 char* copiaNomeToken(char* palavra) {
   int tamanho = strlen(palavra);
   char* copia = malloc(sizeof(tamanho));
@@ -559,7 +627,12 @@ char* copiaNomeToken(char* palavra) {
 
 }
 
-// funcao que converte Hexadecimal para decimal
+/*
+ * Argumentos:
+ *  palavra: string com o Hexadecimal que sera convertido em um decimal
+ * Retorna:
+ *  decimal - valor do Hexadecimal na representacao decimal
+ */
 long int converteHexToDec (char* palavra) {
 
   long int decimal = strtol(palavra, NULL, 0);
@@ -567,7 +640,12 @@ long int converteHexToDec (char* palavra) {
 
 }
 
-// funcao que fornece o Hexadecimal correspondente a cada instrucao
+/*
+ * Argumentos:
+ *  palavra: instrucao que deve ser impressa
+ * Retorna:
+ *  A funcao nao possui retorno, ja que ela apenas printa o codigo da instrucao solicitado no argumento
+ */
 void printaMnemonico (char* palavra) {
   /* verifica se eh um LOAD_M */
   if (strcmp(palavra,"LOAD") == 0) {
@@ -643,28 +721,4 @@ void printaMnemonico (char* palavra) {
   } else {
     printf("Deu ruim ! ¯_(ツ)_/¯");
   }
-}
-
-/*Funcoes auxiliares para verificar as tabelas de rotulo e simbolos criadas*/
-void imprimeListaRotulos() {
-  printf("\n");
-  printf("Lista de Rotulos\n");
-  for (int i = 0; i < numRotulosDefinidos; i++) {
-    printf("RotuloDef %d\n", i);
-    printf("\tPalavra: %s\n", rotulosDefinidos[i].palavra);
-    printf("\tPosicao: %d\n", rotulosDefinidos[i].posicao);
-    printf("\tLado: %d\n", rotulosDefinidos[i].lado);
-  }
-  printf("\n");
-}
-
-void imprimeListaSimbolos() {
-  printf("\n");
-  printf("Lista de Simbolos\n");
-  for (int i = 0; i < numSimbolosDefinidos; i++) {
-    printf("Simbolo %d\n", i);
-    printf("\tPalavra: %s\n", simbolosDefinidos[i].palavra);
-    printf("\tValor: %d\n", simbolosDefinidos[i].valor);
-  }
-  printf("\n");
 }
