@@ -1,0 +1,29 @@
+pascal:
+   addi $sp, $sp, -16             # create stack frame
+   sw $ra, 12($sp)                # save return address
+   sw $s0, 8($sp)                 # save three registers
+   sw $s1, 4($sp)
+   sw $s2, 0($sp)
+
+   beq $a1, $zero, one            # branch if col == 0
+   beq $a1, $a0, one              # branch if col == row
+
+   add $s0, $a0, $zero            # save argument values
+   add $s1, $a1, $zero
+   addi $a0, $a0, -1              # compute args for first recursion
+   addi $a1, $a1, -1
+   jal pascal                     # pascal(row-1, col-1)
+   add $s2, $v0, $zero            # save returned value
+
+   addi $a0, $s0, -1              # compute args for second recursion
+   add $a1, $s1, $zero
+   jal pascal                     # pascal(row-1, col)
+   add $v0, $v0, $s2              # add the two values
+
+   #done:
+   lw $ra, 12($sp)                # restore registers
+   lw $s0, 8($sp)
+   lw $s1, 4($sp)
+   lw $s2, 0($sp)
+   addi $sp, $sp, 16
+   jr $ra                         # return
