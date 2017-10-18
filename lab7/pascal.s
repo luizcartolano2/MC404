@@ -1,9 +1,3 @@
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-@  Aluno: Luiz Eduardo Cartolano   @
-@  RA: 183012                      @
-@  Turma: B                        @
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
 .globl _start
 
 .data

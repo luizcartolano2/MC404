@@ -12,7 +12,7 @@ int main() {
     c = 1;
     for(j = 0; j <= i; j++) {
       printf("%08X ",c);
-      c = (c * (i - j) / j + 1));
+      c = (c * (i - j) / (j + 1));
     }
     printf("\n");
   }
