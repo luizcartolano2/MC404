@@ -39,6 +39,7 @@ _start:
 	for_i:
   cmp r1, r0
 	bge end_for_i
+		push {r1}
 
 		mov r3, #1
 		mov r2, #0
@@ -46,6 +47,7 @@ _start:
 		for_j:
     cmp r2, r1
 		bgt end_for_j
+			push {r2}
 
 			@ print c
 			bl print_c
@@ -65,6 +67,7 @@ _start:
 			sub r2, r2, #1
 			mov r3, r5
 
+			pop {r2}
 			add r2, r2, #1
 			b for_j
 		end_for_j:
@@ -72,6 +75,7 @@ _start:
 		@ print '\n'
 		bl print_new_line
 
+		pop {r1}
 		add r1, r1, #1
 		b for_i
 	end_for_i:
@@ -193,15 +197,21 @@ print_new_line:
 print_c:
 	push {r0-r11, lr}
 
+  mov r4, r1
+  mov r5, r2
+
 	ldr r0, =output_buffer
 	mov r1, #8
 	mov r2, r3
 	bl itoa
 
+  cmp r4, r5
+
 	ldr r0, =output_buffer
-	mov r1, #' '
-	strb r1, [r0, #8]
-	mov r1, #9
+	movne r1, #' '
+	strneb r1, [r0, #8]
+	movne r1, #9
+  moveq r1, #8
 	bl write
 
 	pop {r0-r11, lr}
