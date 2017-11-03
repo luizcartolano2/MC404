@@ -1,0 +1,32 @@
+ate END -> robo anda pra frente e para quando tem alguma coisa na frente dele
+
+quando parar:
+  1. le o leitor 0 e o leitor 1
+  2. se tiver alguma coisa no max_leitor(0,1) -> salta pro rotacionar direita
+  3. se nao tiver nada no leitor 0 -> continua no loop pra virar a esquerda
+
+virar_esquerda:
+  1. coloca velocidade != 0 em r0 e 0 em r1
+  2. volta pro loop que anda pra frente
+
+virar_direita:
+  1. le o leitor 7, se tiver coisa no max_leitor(6,7) --> end
+  2. coloca velocidade != 0 em r1 e 0 em r0
+  3. volta pro loop que anda pra frente
+
+
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+                      ALGORITMO SEGUE PAREDE
+  1. ACHA PAREDE
+    --> enquanto os sonares frontais estao livres (vai pra frente ate achar uma parede)
+    --> quando achar uma parede: para o robo e vira ele pra direita (pra ele seguir a parede esquerda)
+
+  2. ANDA PRA FRENTE
+    --> anda pra frente ate os sonares 3,4 serem obstruidos
+
+  3. VIRA DIREITA
+    --> acelera o motor esquerdo e zera o direito
+    --> quando os sensores frontais estiverem vazios para de virar
+
+  4. CONTROLA SE SEMPRE TEM UMA PAREDE A ESQUERDA
+    --> se nao tiver acha ela
