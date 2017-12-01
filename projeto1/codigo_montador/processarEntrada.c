@@ -66,7 +66,7 @@ int processarEntrada(char* entrada, unsigned tamanho) {
   if(achaErroGramatical() == 0)
     return 1;
 
-  // imprimeListaTokens();
+   imprimeListaTokens();
 
   return 0;
 

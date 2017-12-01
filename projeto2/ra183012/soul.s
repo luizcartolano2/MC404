@@ -157,15 +157,17 @@ SET_TZIC:
 
     ldr sp, =pilha_supervisor
 
-    @Configura a pilha do usuário
-    msr CPSR_c, #0xDF
-    ldr sp, =pilha_usuario
+      @Configura a pilha irq
+      msr CPSR_c, #0xD2
+      ldr sp, =pilha_irq
 
-    @Configura a pilha irq
-    msr CPSR_c, #0xD2
-    ldr sp, =pilha_irq
+      @Configura a pilha supervisor
+      msr  CPSR_c, #0xD3
+      ldr sp, =pilha_supervisor
 
-    msr  CPSR_c, #0x10
+      @configura pilha usuário
+      msr CPSR_c, #0x10
+      ldr sp, =pilha_usuario
 
     @Move para o código do usuários
     ldr lr, =INICIO
@@ -205,18 +207,30 @@ SVC_HANDLER:
     cmp r7, #22
         bleq func_set_alarm
 
-    @troca_modo
+    @troca_modo_alarm
     cmp r7, #23
-        beq func_troca_modo
-    volta_troca_modo:
+      beq func_troca_modo_alarm
+
+    @troca_modo
+    cmp r7, #24
+      beq func_troca_modo_callback
 
     pop {lr}
     movs pc, lr
 
 @Troca o modo do processador
-func_troca_modo:
-  msr CPSR_c, #0x12
-  b volta_troca_modo
+func_troca_modo_alarm:
+
+  msr CPSR_c, #0xD2
+
+  bl return_troca_modo_alarm
+
+@Troca o modo do processador
+func_troca_modo_callback:
+
+  msr CPSR_c, #0xD2
+
+  bl return_troca_modo_callback
 
 @Sleep para esperar retorno de GPIO
 func_sleep:
@@ -307,7 +321,7 @@ func_read_sonar:
 @ nao parar o outro robo
 func_set_motor_speed:
 
-    push {r4, r5, lr}
+    push {r4, r5, r6, lr}
 
     mov r4, r0
     mov r5, r1
@@ -335,10 +349,14 @@ func_set_motor_speed:
                         @Descola para o motor 0
                         cmp r4, #0
                             moveq r4, r5, lsl #18
+                            ldreq r6, =0b00000010000000000000000000000000
+                            orr r4, r6
 
                         @Desloca para o motor 1
                         cmp r4, #1
                             moveq r4, r5, lsl #25
+                            ldreq r6, =0b00000000000001000000000000000000
+                            orr r4, r6
 
                         @Escreve no GPIO
                         ldr r0, =GPIO_DR
@@ -348,7 +366,7 @@ func_set_motor_speed:
     motor_invalido:
     velocidade_invalida:
 
-    pop {r4, r5, lr}
+    pop {r4, r5, r6, lr}
     mov pc, lr
 
 @Seta velocidade para os dois motores
@@ -540,7 +558,7 @@ func_set_alarm:
 
     @Verifica se o tempo do sonar não é menor que o tempo atual
     bl func_get_time
-    cmp r1, r0
+    cmp r3, r0
     beq executa_set_alarm
     movls r0, #-2
     bls fim_set_alarm
@@ -626,8 +644,9 @@ IRQ_HANDLER:
 
             msr CPSR_c, #0x10
             blx r0
-            mov r7, #23
+            mov r7, #24
             svc 0x0
+            return_troca_modo_callback:
 
             @Remove call back se foi chamada
             mov r0, r5
@@ -648,7 +667,7 @@ IRQ_HANDLER:
 
     fim_callback_verifica:
 
-  @  Tratamento de alarme
+  @ Tratamento de alarme
     mov r4, #0
     ldr r5, =ALARM_COUNTER
     ldr r5, [r5]
@@ -665,7 +684,7 @@ IRQ_HANDLER:
         bl func_get_time
 
         cmp r1, r0
-        bne fim_nao_remove_alarme
+        bgt fim_nao_remove_alarme
 
             @Carrega a função no registrador
             ldr r0, =alarm_func
@@ -674,12 +693,12 @@ IRQ_HANDLER:
              msr CPSR_c, #0x10
              blx r1
 
-             @ volta para o modo supervisor
+             @ volta para o modo irq
              mov r7, #23
              svc 0x0
+             return_troca_modo_alarm:
 
             @Remove o alarme
-
             ldr r0, =alarm_func
             ldr r1, [r0, r5, lsl #2]
             str r1,[r0, r4, lsl #2]

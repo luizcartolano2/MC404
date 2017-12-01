@@ -30,6 +30,8 @@ int main(int args, char** argv)
     // Caso haja erro no processamento de entrada, retorne.
     return ret;
   }
+	
 
-  return emitirMapaDeMemoria();
+
+//  return emitirMapaDeMemoria();
 }
